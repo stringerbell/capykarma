@@ -257,6 +257,371 @@ body {
   20%, 40%, 60%, 80% { transform: translateX(10px); }
 }
 
+/* Option Wrapper for positioning */
+.option-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+/* Fake buttons */
+.fake-button {
+  position: absolute !important;
+  pointer-events: auto !important;
+  z-index: 10;
+  opacity: 0.7;
+}
+
+/* Mirrored text */
+.option-button.mirrored {
+  transform: scaleX(-1);
+}
+
+/* Shrinking button */
+.option-button.shrink {
+  animation: shrinkPulse 2s infinite;
+}
+
+@keyframes shrinkPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(0.6); }
+}
+
+/* Inverted colors */
+.option-button.inverted {
+  filter: invert(1);
+}
+
+/* Confirmation text */
+.confirm-text {
+  color: #ff0000;
+  font-weight: bold;
+  animation: flash 0.5s infinite;
+}
+
+@keyframes flash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Karma difficulty indicator */
+.karma-difficulty-indicator {
+  margin-top: 20px;
+  padding: 10px;
+  background: rgba(255, 0, 0, 0.1);
+  border: 1px solid rgba(255, 0, 0, 0.3);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.karma-difficulty-indicator p {
+  margin: 0;
+  color: #ff6666;
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+/* Enhanced Reincarnation Card */
+.reincarnation-card {
+  text-align: center;
+  padding: 40px;
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.fade-in {
+  animation: fadeInSlide 0.8s ease-out forwards;
+}
+
+@keyframes fadeInSlide {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.death-message {
+  font-size: 2rem;
+  margin-bottom: 20px;
+  color: #ff6b6b;
+}
+
+.karma-reveal {
+  margin: 20px 0;
+}
+
+.karma-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #4ecdc4;
+}
+
+.karma-comment {
+  font-style: italic;
+  color: #f7b733;
+  margin-top: 10px;
+}
+
+.reincarnating-message {
+  margin: 20px 0;
+}
+
+.reincarnation-animation {
+  font-size: 3rem;
+  animation: pulse 1s infinite, rotate 3s linear infinite;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.next-life-preview {
+  margin-top: 30px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  width: 100%;
+  max-width: 500px;
+}
+
+.next-life-preview h4 {
+  margin: 0 0 15px 0;
+  color: #fff;
+  font-size: 1.2rem;
+}
+
+.creature-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 20px 0;
+}
+
+.creature-emoji-large {
+  font-size: 5rem;
+  margin-bottom: 10px;
+  animation: floatAnimation 3s ease-in-out infinite;
+}
+
+@keyframes floatAnimation {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.creature-name-preview {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #fff;
+  margin: 10px 0;
+}
+
+.creature-fact {
+  font-style: italic;
+  color: #ddd;
+  margin: 15px 0;
+  padding: 10px;
+  border-left: 3px solid #666;
+  background: rgba(0, 0, 0, 0.2);
+  text-align: left;
+}
+
+.stats-preview {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.stat-preview-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 15px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 5px;
+}
+
+.decay-rate {
+  color: #ff9999;
+}
+
+.extreme-warning {
+  color: #ff0000;
+  font-weight: bold;
+  margin-top: 20px;
+  animation: flash 0.5s infinite;
+  font-size: 1.1rem;
+}
+
+/* Creature Fact Tooltip */
+.creature-fact-tooltip {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 10px 15px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  width: 250px;
+  text-align: center;
+  z-index: 100;
+  margin-top: 10px;
+  pointer-events: none;
+  animation: fadeIn 0.3s ease;
+}
+
+.creature-fact-tooltip::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 8px solid transparent;
+  border-bottom-color: rgba(0, 0, 0, 0.9);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(5px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* Position relative for tooltip */
+.creature-info {
+  position: relative;
+}
+
+/* Enhanced History Card */
+.history-card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.history-card h3 {
+  margin-bottom: 16px;
+  font-size: 1.25rem;
+  color: #333;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.history-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.history-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.history-list::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 3px;
+}
+
+.history-list::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #f9fafb;
+  border-radius: 8px;
+  transition: transform 0.2s;
+}
+
+.history-item:hover {
+  transform: translateX(4px);
+  background: #f3f4f6;
+}
+
+.history-creature {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.history-emoji {
+  font-size: 1.5rem;
+}
+
+.history-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.history-name {
+  font-weight: 600;
+  color: #333;
+}
+
+.history-lifetime {
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.history-stats {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.karma-stat {
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.karma-stat.positive {
+  color: #059669;
+  background: #d1fae5;
+}
+
+.karma-stat.negative {
+  color: #dc2626;
+  background: #fee2e2;
+}
+
+.int-stat {
+  color: #6366f1;
+  font-weight: 500;
+}
+
+.history-footer {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+  text-align: center;
+}
+
+.history-footer p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #666;
+  font-style: italic;
+}
+
 /* Responsive */
 @media (max-width: 640px) {
   .game-title {
