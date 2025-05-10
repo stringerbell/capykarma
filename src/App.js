@@ -1,6 +1,142 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 
+// Storage keys for persistence
+const STORAGE_KEYS = {
+  KARMA: 'karmic_journey_karma',
+  KARMA_BACKUP: 'karmic_journey_karma_backup',
+  KARMA_CHECKSUM: 'karmic_journey_karma_checksum',
+  LIFETIME: 'karmic_journey_lifetime',
+  LIFETIME_BACKUP: 'karmic_journey_lifetime_backup',
+  HISTORY: 'karmic_journey_history',
+  HISTORY_BACKUP: 'karmic_journey_history_backup'
+};
+
+// Simple checksum function
+function calculateChecksum(value) {
+  return btoa(String(value * 7 + 42)).substring(0, 8);
+}
+
+// Get persistent value with healing and tampering detection
+function getPersistentValue(key, backupKey, checksumKey, defaultValue, onTamperDetected = null) {
+  try {
+    // Try to get from multiple sources
+    const primary = localStorage.getItem(key);
+    const backup = localStorage.getItem(backupKey);
+    const checksum = localStorage.getItem(checksumKey);
+    const sessionValue = sessionStorage.getItem(key);
+
+    // Parse values
+    const primaryValue = primary ? JSON.parse(primary) : null;
+    const backupValue = backup ? JSON.parse(backup) : null;
+    const sessionValueParsed = sessionValue ? JSON.parse(sessionValue) : null;
+
+    // Validate with checksum if it's karma
+    if (key === STORAGE_KEYS.KARMA && checksum && primaryValue !== null) {
+      const calculatedChecksum = calculateChecksum(primaryValue);
+      if (calculatedChecksum !== checksum) {
+        // Tampering detected!
+        console.warn('Karma tampering detected!');
+        if (onTamperDetected) {
+          onTamperDetected();
+        }
+
+        // Use backup if available, otherwise apply penalty
+        if (backupValue !== null) {
+          // Apply karma penalty that makes karma worse, not better
+          if (backupValue >= 0) {
+            // Positive karma: reduce by 50% or set to -100, whichever is worse
+            return Math.min(backupValue * 0.5, -100);
+          } else {
+            // Negative karma: make it 50% more negative
+            return backupValue * 1.5;
+          }
+        } else {
+          // No backup, return heavily penalized default
+          return -200;
+        }
+      }
+    }
+
+    // Check for value mismatch (potential tampering)
+    if (primaryValue !== null && backupValue !== null && primaryValue !== backupValue) {
+      if (key === STORAGE_KEYS.KARMA) {
+        // Values don't match - likely tampering
+        console.warn('Karma value mismatch detected!');
+        if (onTamperDetected) {
+          onTamperDetected();
+        }
+        // Use the lower value and apply penalty that makes it worse
+        const lowerValue = Math.min(primaryValue, backupValue);
+        if (lowerValue >= 0) {
+          // Positive karma: reduce significantly or go negative
+          return Math.min(lowerValue * 0.3, -50);
+        } else {
+          // Negative karma: make it 30% more negative
+          return lowerValue * 1.3;
+        }
+      }
+    }
+
+    // Healing logic - use whichever source has data
+    if (primaryValue !== null) {
+      // Heal backup and session if primary exists
+      localStorage.setItem(backupKey, JSON.stringify(primaryValue));
+      sessionStorage.setItem(key, JSON.stringify(primaryValue));
+      return primaryValue;
+    } else if (backupValue !== null) {
+      // Heal primary from backup
+      localStorage.setItem(key, JSON.stringify(backupValue));
+      sessionStorage.setItem(key, JSON.stringify(backupValue));
+      return backupValue;
+    } else if (sessionValueParsed !== null) {
+      // Heal both from session
+      localStorage.setItem(key, JSON.stringify(sessionValueParsed));
+      localStorage.setItem(backupKey, JSON.stringify(sessionValueParsed));
+      return sessionValueParsed;
+    }
+
+    return defaultValue;
+  } catch (e) {
+    console.warn('Storage access failed:', e);
+    return defaultValue;
+  }
+}
+
+// Save persistent value to multiple places
+function setPersistentValue(key, backupKey, value, checksumKey = null) {
+  try {
+    const stringValue = JSON.stringify(value);
+
+    // Save to all storage locations
+    localStorage.setItem(key, stringValue);
+    localStorage.setItem(backupKey, stringValue);
+    sessionStorage.setItem(key, stringValue);
+
+    // Save checksum for karma
+    if (checksumKey && key === STORAGE_KEYS.KARMA) {
+      const checksum = calculateChecksum(value);
+      localStorage.setItem(checksumKey, checksum);
+    }
+
+    // Also save to IndexedDB for extra persistence
+    if ('indexedDB' in window) {
+      const request = indexedDB.open('KarmicJourneyDB', 1);
+      request.onsuccess = (event) => {
+        const db = event.target.result;
+        const transaction = db.transaction(['gameState'], 'readwrite');
+        const store = transaction.objectStore('gameState');
+        store.put({ id: key, value: value });
+      };
+      request.onerror = () => {
+        console.warn('IndexedDB not available');
+      };
+    }
+  } catch (e) {
+    console.warn('Storage save failed:', e);
+  }
+}
+
 // Define creatures and their karma ranges
 const CREATURES = {
   celestial: { minKarma: 80, name: "Celestial Being", emoji: "👼", healthDecay: 0.15 },
@@ -73,18 +209,103 @@ function shuffleArray(array) {
 }
 
 function App() {
+  // Initialize IndexedDB
+  useEffect(() => {
+    if ('indexedDB' in window) {
+      const request = indexedDB.open('KarmicJourneyDB', 1);
+      request.onupgradeneeded = (event) => {
+        const db = event.target.result;
+        if (!db.objectStoreNames.contains('gameState')) {
+          db.createObjectStore('gameState', { keyPath: 'id' });
+        }
+      };
+    }
+  }, []);
+
+  // Load persistent values
   const [gameState, setGameState] = useState('playing');
   const [currentCreature, setCurrentCreature] = useState('capybara');
   const [health, setHealth] = useState(100);
-  const [karma, setKarma] = useState(50);
+  const [tamperDetected, setTamperDetected] = useState(false);
+  const [karma, setKarma] = useState(() =>
+      getPersistentValue(
+          STORAGE_KEYS.KARMA,
+          STORAGE_KEYS.KARMA_BACKUP,
+          STORAGE_KEYS.KARMA_CHECKSUM,
+          50,
+          () => setTamperDetected(true)
+      )
+  );
   const [intelligence, setIntelligence] = useState(50);
   const [currentQuestion, setCurrentQuestion] = useState(null);
-  const [lifetime, setLifetime] = useState(1);
-  const [history, setHistory] = useState([]);
+  const [lifetime, setLifetime] = useState(() =>
+      getPersistentValue(STORAGE_KEYS.LIFETIME, STORAGE_KEYS.LIFETIME_BACKUP, null, 1)
+  );
+  const [history, setHistory] = useState(() =>
+      getPersistentValue(STORAGE_KEYS.HISTORY, STORAGE_KEYS.HISTORY_BACKUP, null, [])
+  );
   const [isLoadingQuestion, setIsLoadingQuestion] = useState(false);
 
   const healthRef = useRef(health);
   healthRef.current = health;
+
+  // Persist karma changes
+  useEffect(() => {
+    setPersistentValue(STORAGE_KEYS.KARMA, STORAGE_KEYS.KARMA_BACKUP, karma, STORAGE_KEYS.KARMA_CHECKSUM);
+  }, [karma]);
+
+  // Persist lifetime changes
+  useEffect(() => {
+    setPersistentValue(STORAGE_KEYS.LIFETIME, STORAGE_KEYS.LIFETIME_BACKUP, lifetime);
+  }, [lifetime]);
+
+  // Persist history changes
+  useEffect(() => {
+    setPersistentValue(STORAGE_KEYS.HISTORY, STORAGE_KEYS.HISTORY_BACKUP, history);
+  }, [history]);
+
+  // Hidden healing mechanism - runs periodically to ensure consistency
+  useEffect(() => {
+    const healingInterval = setInterval(() => {
+      // Heal karma from any available source
+      const healedKarma = getPersistentValue(
+          STORAGE_KEYS.KARMA,
+          STORAGE_KEYS.KARMA_BACKUP,
+          STORAGE_KEYS.KARMA_CHECKSUM,
+          karma,
+          () => {
+            setTamperDetected(true);
+            // Apply additional penalty that always makes karma worse
+            setKarma(prev => {
+              if (prev >= 0) {
+                // Positive karma: push negative
+                return prev - 100;
+              } else {
+                // Negative karma: make more negative
+                return prev * 1.2 - 50;
+              }
+            });
+          }
+      );
+      if (healedKarma !== karma) {
+        setKarma(healedKarma);
+      }
+
+      // Heal lifetime
+      const healedLifetime = getPersistentValue(STORAGE_KEYS.LIFETIME, STORAGE_KEYS.LIFETIME_BACKUP, null, lifetime);
+      if (healedLifetime !== lifetime) {
+        setLifetime(healedLifetime);
+      }
+
+      // Heal history
+      const healedHistory = getPersistentValue(STORAGE_KEYS.HISTORY, STORAGE_KEYS.HISTORY_BACKUP, null, history);
+      if (JSON.stringify(healedHistory) !== JSON.stringify(history)) {
+        setHistory(healedHistory);
+      }
+    }, 2000); // Check every 2 seconds
+
+    return () => clearInterval(healingInterval);
+  }, [karma, lifetime, history]);
 
   // Health decay effect
   useEffect(() => {
@@ -168,7 +389,25 @@ function App() {
   }
 
   function handleChoice(option) {
-    setKarma(prev => Math.max(-100, Math.min(100, prev + option.karma)));
+    setKarma(prev => {
+      // Calculate karma change based on current karma level
+      let karmaChange = option.karma;
+
+      // Entropy factor: negative actions have 50% more impact
+      if (option.karma < 0) {
+        karmaChange = option.karma * 1.5;
+      }
+
+      // Amplification based on absolute karma (works for both positive and negative)
+      const absKarma = Math.abs(prev);
+      const scaleFactor = 1 + (absKarma / 50) + Math.pow(absKarma / 100, 2);
+
+      // Apply scaling
+      karmaChange = karmaChange * scaleFactor;
+
+      return prev + karmaChange;
+    });
+
     setIntelligence(prev => Math.max(0, Math.min(100, prev + option.intelligence)));
     setCurrentQuestion(null);
 
@@ -241,6 +480,14 @@ function App() {
               </div>
             </div>
           </div>
+
+          {/* Tampering Warning */}
+          {tamperDetected && (
+              <div className="tampering-warning">
+                <h3>⚠️ The Universe Has Noticed Your Deception ⚠️</h3>
+                <p>Your karma has been reduced as punishment for attempting to manipulate fate.</p>
+              </div>
+          )}
 
           {/* Loading Indicator */}
           {isLoadingQuestion && gameState === 'playing' && (

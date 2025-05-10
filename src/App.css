@@ -229,6 +229,34 @@ body {
   color: #666;
 }
 
+/* Tampering Warning */
+.tampering-warning {
+  background: #dc2626;
+  color: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  text-align: center;
+  animation: shake 0.5s;
+  box-shadow: 0 0 20px rgba(220, 38, 38, 0.5);
+}
+
+.tampering-warning h3 {
+  margin: 0 0 10px 0;
+  font-size: 1.5rem;
+}
+
+.tampering-warning p {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+  20%, 40%, 60%, 80% { transform: translateX(10px); }
+}
+
 /* Responsive */
 @media (max-width: 640px) {
   .game-title {
