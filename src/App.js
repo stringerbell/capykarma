@@ -62,6 +62,16 @@ function garbleText(text, intelligence) {
   return result;
 }
 
+// Shuffle array using Fisher-Yates algorithm
+function shuffleArray(array) {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
 function App() {
   const [gameState, setGameState] = useState('playing');
   const [currentCreature, setCurrentCreature] = useState('capybara');
@@ -71,6 +81,7 @@ function App() {
   const [currentQuestion, setCurrentQuestion] = useState(null);
   const [lifetime, setLifetime] = useState(1);
   const [history, setHistory] = useState([]);
+  const [isLoadingQuestion, setIsLoadingQuestion] = useState(false);
 
   const healthRef = useRef(health);
   healthRef.current = health;
@@ -96,17 +107,27 @@ function App() {
 
   // Generate random question periodically
   useEffect(() => {
-    if (gameState !== 'playing' || currentQuestion) return;
+    if (gameState !== 'playing' || currentQuestion || isLoadingQuestion) return;
 
     const timeout = setTimeout(() => {
       if (!currentQuestion && gameState === 'playing') {
-        const question = QUESTIONS[Math.floor(Math.random() * QUESTIONS.length)];
-        setCurrentQuestion(question);
+        setIsLoadingQuestion(true);
+        // Add a delay before showing the next question
+        setTimeout(() => {
+          const question = QUESTIONS[Math.floor(Math.random() * QUESTIONS.length)];
+          // Create a new question object with shuffled options
+          const shuffledQuestion = {
+            ...question,
+            options: shuffleArray(question.options)
+          };
+          setCurrentQuestion(shuffledQuestion);
+          setIsLoadingQuestion(false);
+        }, 1000); // 1 second delay for loading
       }
     }, 3000 + Math.random() * 2000);
 
     return () => clearTimeout(timeout);
-  }, [currentQuestion, gameState]);
+  }, [currentQuestion, gameState, isLoadingQuestion]);
 
   function reincarnate() {
     setGameState('reincarnating');
@@ -134,6 +155,7 @@ function App() {
       setLifetime(prev => prev + 1);
       setGameState('playing');
       setCurrentQuestion(null);
+      setIsLoadingQuestion(false);
 
       // Karma carries over with some decay
       setKarma(prev => prev * 0.8);
@@ -212,8 +234,16 @@ function App() {
             </div>
           </div>
 
+          {/* Loading Indicator */}
+          {isLoadingQuestion && gameState === 'playing' && (
+              <div className="loading-card">
+                <div className="loading-spinner"></div>
+                <p>Contemplating next situation...</p>
+              </div>
+          )}
+
           {/* Question/Event */}
-          {currentQuestion && gameState === 'playing' && (
+          {currentQuestion && gameState === 'playing' && !isLoadingQuestion && (
               <div className="question-card">
                 <h3 className="question-text">
                   {garbleText(currentQuestion.text, intelligence)}
@@ -265,23 +295,5 @@ function App() {
       </div>
   );
 }
-
-function shuffle(array) {
-  let currentIndex = array.length;
-
-  // While there remain elements to shuffle...
-  while (currentIndex !== 0) {
-
-    // Pick a remaining element...
-    let randomIndex = Math.floor(Math.random() * currentIndex);
-    currentIndex--;
-
-    // And swap it with the current element.
-    [array[currentIndex], array[randomIndex]] = [
-      array[randomIndex], array[currentIndex]];
-  }
-  return array
-}
-
 
 export default App;
