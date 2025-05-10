@@ -3,13 +3,13 @@ import './App.css';
 
 // Define creatures and their karma ranges
 const CREATURES = {
-  celestial: { minKarma: 80, name: "Celestial Being", emoji: "👼", healthDecay: 0.05 },
-  human: { minKarma: 60, name: "Human", emoji: "🧑", healthDecay: 0.1 },
-  capybara: { minKarma: 40, name: "Capybara", emoji: "🦫", healthDecay: 0.15 },
-  dog: { minKarma: 20, name: "Dog", emoji: "🐕", healthDecay: 0.2 },
-  rat: { minKarma: 0, name: "Rat", emoji: "🐀", healthDecay: 0.25 },
-  cockroach: { minKarma: -20, name: "Cockroach", emoji: "🪳", healthDecay: 0.3 },
-  bacteria: { minKarma: -40, name: "Bacteria", emoji: "🦠", healthDecay: 0.4 }
+  celestial: { minKarma: 80, name: "Celestial Being", emoji: "👼", healthDecay: 0.15 },
+  human: { minKarma: 60, name: "Human", emoji: "🧑", healthDecay: 0.25 },
+  capybara: { minKarma: 40, name: "Capybara", emoji: "🦫", healthDecay: 0.35 },
+  dog: { minKarma: 20, name: "Dog", emoji: "🐕", healthDecay: 0.45 },
+  rat: { minKarma: 0, name: "Rat", emoji: "🐀", healthDecay: 0.6 },
+  cockroach: { minKarma: -20, name: "Cockroach", emoji: "🪳", healthDecay: 0.8 },
+  bacteria: { minKarma: -40, name: "Bacteria", emoji: "🦠", healthDecay: 1.0 }
 };
 
 // Question types with karma impacts
@@ -107,24 +107,27 @@ function App() {
 
   // Generate random question periodically
   useEffect(() => {
-    if (gameState !== 'playing' || currentQuestion || isLoadingQuestion) return;
+    if (gameState !== 'playing') return;
 
-    const timeout = setTimeout(() => {
-      if (!currentQuestion && gameState === 'playing') {
+    let timeout;
+
+    if (isLoadingQuestion) {
+      // If loading, show next question after delay
+      timeout = setTimeout(() => {
+        const question = QUESTIONS[Math.floor(Math.random() * QUESTIONS.length)];
+        const shuffledQuestion = {
+          ...question,
+          options: shuffleArray(question.options)
+        };
+        setCurrentQuestion(shuffledQuestion);
+        setIsLoadingQuestion(false);
+      }, 2000);
+    } else if (!currentQuestion && !isLoadingQuestion) {
+      // If no question and not loading, start loading after delay
+      timeout = setTimeout(() => {
         setIsLoadingQuestion(true);
-        // Add a delay before showing the next question
-        setTimeout(() => {
-          const question = QUESTIONS[Math.floor(Math.random() * QUESTIONS.length)];
-          // Create a new question object with shuffled options
-          const shuffledQuestion = {
-            ...question,
-            options: shuffleArray(question.options)
-          };
-          setCurrentQuestion(shuffledQuestion);
-          setIsLoadingQuestion(false);
-        }, 1000); // 1 second delay for loading
-      }
-    }, 3000 + Math.random() * 2000);
+      }, 3000);
+    }
 
     return () => clearTimeout(timeout);
   }, [currentQuestion, gameState, isLoadingQuestion]);
@@ -168,6 +171,11 @@ function App() {
     setKarma(prev => Math.max(-100, Math.min(100, prev + option.karma)));
     setIntelligence(prev => Math.max(0, Math.min(100, prev + option.intelligence)));
     setCurrentQuestion(null);
+
+    // Show loading immediately after choice
+    setTimeout(() => {
+      setIsLoadingQuestion(true);
+    }, 100);
   }
 
   const creature = CREATURES[currentCreature] || CREATURES.capybara;
