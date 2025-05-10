@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/capykarma/static/css/main.78e791c1.css",
+    "main.js": "/capykarma/static/js/main.6755a9d9.js",
+    "index.html": "/capykarma/index.html",
+    "main.78e791c1.css.map": "/capykarma/static/css/main.78e791c1.css.map",
+    "main.6755a9d9.js.map": "/capykarma/static/js/main.6755a9d9.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.78e791c1.css",
+    "static/js/main.6755a9d9.js"
+  ]
+}
